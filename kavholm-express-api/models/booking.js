@@ -114,6 +114,51 @@ class Booking {
 
     return results.rows
   }
+
+  static async createBooking(newBooking, listing, user) {
+    const requiredFields = ["startDate", "endDate"]
+    requiredFields.forEach((field) => {
+      if (!newBooking?.hasOwnProperty(field)) {
+        throw new BadRequestError(`Missing required field - ${field} - in request body.`)
+      }
+    })
+
+    const results = await db.query(`
+      INSERT INTO bookings (payment_method, start_date, end_date, guests, total_cost, listing_id, user_id)
+      VALUES ($1, ($2)::date, ($3)::date, $4, CEIL((($3)::date - ($2)::date + 1) * ($5 + $5 * 0.1)), $6, (SELECT id FROM users WHERE username = $7))
+      RETURNING id,
+                start_date AS "startDate",
+                end_date AS "endDate",
+                guests,
+                total_cost AS "totalCost",
+                user_id AS "userId",
+                ( SELECT username
+                  FROM users
+                  WHERE id = user_id
+                ) AS "username",
+                (
+                  SELECT id 
+                  FROM users 
+                  WHERE id = 
+                  (
+                    SELECT listings.user_id
+                    FROM listings
+                    WHERE listings.id = $6
+                  )
+                ) AS "hostUsername",
+                created_at AS "createdAt",
+                ( SELECT listings.id
+                  FROM listings
+                  WHERE listings.id = $6) AS "listingId",
+                  payment_method AS "paymentMethod"
+
+    `, ["card", newBooking.startDate, newBooking.endDate, newBooking.guests, listing.price, listing.id, user.username]
+    )
+
+    return results.rows[0]
+  }
+
+
 }
 
 module.exports = Booking
