@@ -61,10 +61,11 @@ class User {
     const normalizedEmail = credentials.email.toLowerCase()
     const normalizedUsername = credentials.username.toLowerCase()
 
+    // first test failed here, values returned weren't camelCased
     const userResult = await db.query(
       `INSERT INTO users (email, username, first_name, last_name, password, is_admin)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, email, username, first_name, last_name, is_admin, created_at;
+       RETURNING id, email, username, first_name AS "firstName", last_name AS "lastName", is_admin AS "isAdmin", created_at AS "createdAt"; 
       `,
       [
         normalizedEmail,
