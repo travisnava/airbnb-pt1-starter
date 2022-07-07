@@ -87,5 +87,46 @@ describe("GET /bookings/listings", () => {
 })
 
 /************************************** POST bookings/listings/:listingId */
+describe("POST bookings/listings/:listingId", () => {
 
+
+  test("Authed user can book a listing they don't own", async () => {
+    const listingId = testListingIds[0]
+    const data = { newBooking: {startDate: new Date("04-03-2021"), endDate: new Date("04-06-2021"), guests: 2}}
+    const res =  await request(app)
+      .post(`/bookings/listings/${listingId}`)
+      .set("authorization", `Bearer ${testTokens.jloToken}`)
+      .send(data)
+    expect(res.statusCode).toEqual(201)
+    const booking = res.body
+    expect(booking).toEqual({
+      id: expect.any(Number),
+      startDate: expect.anything(),
+      endDate: expect.anything(),
+      paymentMethod: "card",
+      guests: data.newBooking.guests,
+      hostUsername: expect.anything(),
+      totalCost: expect.anything(),
+      listingId: listingId,
+      username: "jlo",
+      userId: expect.any(Number),
+      createdAt: expect.anything()
+
+
+    })
+
+  })
+
+  test("Throws a Bad Request error when user attempts to book their own listing", async () => {
+    const listingId = testListingIds[0]
+    const data = { newBooking: {startDate: new Date("04-06-2021"), endDate: new Date("04-09-2021"), guests: 4}}
+    const res =  await request(app)
+    .post(`/bookings/listings/${listingId}`)
+    .set("authorization", `Bearer ${testTokens.lebronToken}`)
+    .send(data)
+  expect(res.statusCode).toEqual(400)
+
+  })
+
+})
 /************************************** GET bookings/listings/:listingId */
